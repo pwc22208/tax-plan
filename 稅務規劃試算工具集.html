@@ -1,0 +1,2629 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>稅務規劃試算工具集 ・ Tax Planning Calculator Suite</title>
+
+<!-- iOS Web App -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Tax Suite">
+<link rel="apple-touch-icon" href="tax-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --navy-deepest: #050d1f;
+    --navy-deep: #0a1730;
+    --navy: #0c1e3e;
+    --navy-light: #1a3158;
+    --gold: #c9a96e;
+    --gold-deep: #a78a52;
+    --gold-light: #e3cc9b;
+    --cream: #faf6ed;
+    --cream-deep: #f0e9d8;
+    --paper: #fdfaf3;
+    --ink: #0d1424;
+    --ink-soft: #2a3348;
+    --muted: #6b7280;
+    --muted-soft: #9ca3af;
+    --line: rgba(12,30,62,0.12);
+    --line-gold: rgba(201,169,110,0.35);
+    --danger: #8b2a2a;
+    --danger-soft: #c44a4a;
+    --success: #2d5a3d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Noto Sans TC', Arial, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.7;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .num, input[type="text"],
+  .scenario-row .value, .highlight-value, .benefit-value,
+  .detail-table tbody td:not(:first-child),
+  .scenario-delta strong,
+  .threshold-num, .stat-num, .net-income-num {
+    font-family: Arial, 'Noto Sans TC', sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ============ LOGIN SCREEN ============ */
+  .login-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: linear-gradient(135deg, var(--navy-deepest) 0%, var(--navy) 50%, var(--navy-light) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    transition: opacity 0.6s ease;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--paper);
+    border: 1px solid var(--line-gold);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    overflow: hidden;
+  }
+
+  .login-header {
+    background: linear-gradient(180deg, var(--navy) 0%, var(--navy-light) 100%);
+    padding: 48px 32px 36px;
+    text-align: center;
+    border-bottom: 1px solid var(--gold);
+    position: relative;
+  }
+  .login-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .login-lock {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    border: 1px solid var(--gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold-light);
+  }
+
+  .login-title {
+    font-family: 'Noto Serif TC', serif;
+    color: var(--cream);
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .login-subtitle {
+    color: var(--gold-light);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  .login-body { padding: 36px 32px 32px; }
+
+  .login-label {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--gold-deep);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+
+  .login-input {
+    width: 100%;
+    min-height: 50px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    color: var(--ink);
+    letter-spacing: 0.05em;
+    outline: none;
+    -webkit-appearance: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  }
+  .login-input:focus {
+    border-color: var(--gold);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(201,169,110,0.12);
+  }
+
+  .login-error {
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: rgba(139,42,42,0.06);
+    border-left: 2px solid var(--danger);
+    color: var(--danger);
+    font-size: 13px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .login-error.show { display: flex; animation: shake 0.4s; }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .login-btn {
+    width: 100%;
+    margin-top: 24px;
+    padding: 15px;
+    background: var(--navy);
+    color: var(--cream);
+    border: 1px solid var(--gold);
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .login-btn:hover {
+    background: var(--navy-light);
+    letter-spacing: 0.25em;
+  }
+
+  /* ============ APP CONTAINER ============ */
+  .app { display: none; }
+  .app.show { display: block; animation: fadeIn 0.5s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============ HOME / MENU ============ */
+  .home-hero {
+    background: linear-gradient(135deg, var(--navy-deepest) 0%, var(--navy) 60%, var(--navy-light) 100%);
+    color: var(--cream);
+    padding: 72px 40px 100px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .home-hero::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(201,169,110,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .home-hero-inner {
+    position: relative;
+    max-width: 880px;
+    margin: 0 auto;
+  }
+
+  .home-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+
+  .home-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(30px, 4.5vw, 46px);
+    font-weight: 400;
+    line-height: 1.3;
+    margin-bottom: 16px;
+    letter-spacing: 0.02em;
+  }
+
+  .home-subtitle {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(13px, 1.6vw, 16px);
+    color: var(--gold-light);
+    letter-spacing: 0.15em;
+    font-weight: 300;
+    font-style: italic;
+  }
+
+  .home-divider {
+    width: 60px;
+    height: 1px;
+    background: var(--gold);
+    margin: 28px auto 0;
+  }
+
+  .home-cards-section {
+    background: var(--paper);
+    padding: 0 40px 80px;
+    margin-top: -60px;
+    position: relative;
+  }
+
+  .home-cards-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .menu-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 44px 36px 36px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    text-align: left;
+    box-shadow: 0 8px 32px rgba(12,30,62,0.06);
+  }
+
+  .menu-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--gold);
+    box-shadow: 0 16px 48px rgba(12,30,62,0.12);
+  }
+
+  .menu-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+  .menu-card:hover::before { transform: scaleX(1); }
+
+  .menu-card-num {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    color: var(--gold-deep);
+    margin-bottom: 24px;
+    font-weight: 600;
+  }
+
+  .menu-card-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 24px;
+    color: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line-gold);
+    background: var(--cream);
+  }
+  .menu-card:hover .menu-card-icon {
+    color: var(--gold-deep);
+    border-color: var(--gold);
+  }
+
+  .menu-card-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--navy);
+    margin-bottom: 8px;
+    line-height: 1.35;
+  }
+
+  .menu-card-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 24px;
+    line-height: 1.6;
+    letter-spacing: 0.05em;
+  }
+
+  .menu-card-features {
+    list-style: none;
+    margin-bottom: 28px;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+  }
+  .menu-card-features li {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    padding: 5px 0;
+    padding-left: 18px;
+    position: relative;
+    line-height: 1.6;
+  }
+  .menu-card-features li::before {
+    content: '◆';
+    position: absolute;
+    left: 0;
+    top: 5px;
+    color: var(--gold);
+    font-size: 8px;
+  }
+
+  .menu-card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 13px;
+    color: var(--navy);
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    width: 100%;
+    transition: color 0.3s ease;
+  }
+  .menu-card:hover .menu-card-cta { color: var(--gold-deep); }
+
+  .menu-card-cta-arrow {
+    transition: transform 0.3s ease;
+  }
+  .menu-card:hover .menu-card-cta-arrow { transform: translateX(6px); }
+
+  /* ============ TOOL CONTAINER (shared) ============ */
+  .tool-view { display: none; }
+  .tool-view.show { display: block; animation: fadeIn 0.4s ease; }
+
+  .back-bar {
+    background: var(--navy-deepest);
+    padding: 12px 40px;
+    border-bottom: 1px solid var(--gold-deep);
+  }
+
+  .back-btn {
+    background: none;
+    border: none;
+    color: var(--cream);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    padding: 6px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s ease;
+  }
+  .back-btn:hover { color: var(--gold-light); }
+
+  /* ============ SECTION (shared) ============ */
+  section {
+    padding: 56px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .section-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(24px, 3.2vw, 36px);
+    font-weight: 400;
+    line-height: 1.3;
+    color: var(--navy);
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+
+  .section-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    color: var(--gold-deep);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  .section-intro {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px;
+    line-height: 1.85;
+    color: var(--ink-soft);
+    max-width: 720px;
+    margin-bottom: 36px;
+    font-weight: 300;
+  }
+
+  /* ============ INCOME TAX TOOL ============ */
+  .income-warning {
+    max-width: 1400px;
+    margin: 0 auto 0;
+    padding: 0 40px;
+  }
+
+  .income-warning-inner {
+    background: rgba(139,42,42,0.04);
+    border-left: 3px solid var(--danger);
+    padding: 16px 20px;
+    margin-top: 32px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .income-warning-icon {
+    flex-shrink: 0;
+    color: var(--danger);
+    margin-top: 2px;
+  }
+
+  .income-warning-text {
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+  }
+  .income-warning-text strong { color: var(--danger); font-weight: 500; }
+
+  .income-grid {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 36px;
+    align-items: start;
+  }
+
+  /* INCOME FORM */
+  .income-form {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    position: sticky;
+    top: 24px;
+    box-shadow: 0 4px 24px rgba(12,30,62,0.04);
+  }
+
+  .income-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .income-tab {
+    flex: 1;
+    padding: 18px 16px;
+    background: none;
+    border: none;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.25s ease;
+  }
+  .income-tab:hover { color: var(--ink-soft); background: rgba(201,169,110,0.04); }
+  .income-tab.active {
+    color: var(--navy);
+    border-bottom-color: var(--gold);
+    background: rgba(201,169,110,0.06);
+  }
+
+  .income-form-body { padding: 28px 28px 32px; }
+
+  .income-form-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+
+  .income-form-subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+    letter-spacing: 0.05em;
+  }
+
+  /* (uses field/field-label/field-input from estate styles below) */
+
+  .reverse-hint {
+    padding: 16px;
+    background: var(--cream);
+    border-left: 2px solid var(--gold);
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+    margin-bottom: 22px;
+  }
+  .reverse-hint strong { color: var(--navy); font-weight: 500; }
+
+  /* INCOME RESULTS */
+  .income-results { display: flex; flex-direction: column; gap: 22px; }
+
+  /* Main threshold card */
+  .threshold-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow: 0 4px 24px rgba(12,30,62,0.04);
+    overflow: hidden;
+  }
+
+  .threshold-top {
+    background: linear-gradient(180deg, #fff 0%, var(--cream) 100%);
+    padding: 36px 40px 32px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .threshold-label {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--gold-deep);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .threshold-num-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .threshold-num {
+    font-size: clamp(36px, 5.4vw, 58px);
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    word-break: break-all;
+  }
+
+  .threshold-unit {
+    font-size: 18px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .threshold-explain {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-top: 8px;
+  }
+
+  /* Itemization list */
+  .threshold-items {
+    background: var(--cream);
+    padding: 22px 40px 28px;
+  }
+
+  .threshold-items-title {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--gold-deep);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  .threshold-items-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .threshold-item {
+    background: var(--paper);
+    border: 1px solid var(--line-gold);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--gold-deep);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .threshold-item::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .threshold-item.minor {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-weight: 400;
+    padding: 6px 14px;
+  }
+  .threshold-item.minor::before {
+    width: 4px;
+    height: 4px;
+    background: var(--muted-soft);
+  }
+
+  .threshold-item.full-row { grid-column: 1 / -1; }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+
+  .stats-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 28px;
+    box-shadow: 0 4px 16px rgba(12,30,62,0.03);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stats-card-label {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--gold-deep);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  /* Net income display - appears ABOVE tax amount */
+  .net-income-block {
+    padding: 14px 16px;
+    background: var(--cream);
+    border-left: 2px solid var(--gold);
+    margin-bottom: 18px;
+  }
+
+  .net-income-tiny-label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--gold-deep);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+
+  .net-income-num {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--navy);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  .net-income-unit {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+
+  /* Tax + rate row inside stats-card */
+  .stats-numbers-row {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .stats-num-block .mini-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  .stats-num-tax {
+    font-size: clamp(22px, 2.6vw, 28px);
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: -0.01em;
+    word-break: break-all;
+    line-height: 1.15;
+  }
+  .stats-num-tax.negative { color: var(--success); }
+
+  .stats-num-rate {
+    font-size: clamp(26px, 3.2vw, 34px);
+    font-weight: 700;
+    color: var(--gold-deep);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  .stats-mode-block {
+    padding-top: 16px;
+  }
+
+  .stats-mode-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .stats-mode-text {
+    font-family: 'Noto Serif TC', serif;
+    color: var(--navy);
+    font-size: 17px;
+    font-weight: 500;
+  }
+
+  .stats-mode-savings {
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--cream);
+    padding: 3px 10px;
+    border: 1px solid var(--line);
+  }
+
+  .stats-dividend-credit {
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--gold-deep);
+    font-weight: 500;
+    display: none;
+  }
+  .stats-dividend-credit.show { display: block; }
+
+  /* Effective rate card */
+  .stats-card-effective .effective-num {
+    font-size: clamp(26px, 3.2vw, 34px);
+    font-weight: 700;
+    color: var(--success);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  .stats-card-effective .effective-note {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+  }
+
+  .stats-formula {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* ============ FIELD (shared with estate tool) ============ */
+  .field { margin-bottom: 14px; }
+
+  .field-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    font-weight: 400;
+  }
+
+  .field-hint {
+    font-size: 11px;
+    color: var(--muted-soft);
+    font-weight: 300;
+  }
+
+  .field-input { position: relative; }
+
+  .field-input input,
+  .field-input select {
+    width: 100%;
+    min-height: 46px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    font-family: Arial, 'Noto Sans TC', sans-serif;
+    font-size: 16px;
+    color: var(--ink);
+    font-weight: 500;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    outline: none;
+    border-radius: 0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .field-input select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3e%3cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .field-input input:focus,
+  .field-input select:focus {
+    border-color: var(--gold);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(201,169,110,0.12);
+  }
+
+  .field-input.with-suffix input { padding-right: 38px; }
+  .field-input.with-prefix input { padding-left: 28px; }
+
+  .field-input .suffix,
+  .field-input .prefix {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .field-input .suffix { right: 14px; }
+  .field-input .prefix { left: 12px; font-size: 14px; }
+
+  .field-input input.text-right { text-align: right; }
+
+  .field-input.emphasized input {
+    border-color: var(--gold);
+    background: var(--cream);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--navy);
+    text-align: right;
+    min-height: 56px;
+  }
+
+  .form-section { margin-bottom: 22px; }
+
+  .form-section-title {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--gold-deep);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  .form-section-hint {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-top: 6px;
+    padding-left: 4px;
+  }
+
+  .number-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .row-flex {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .row-flex .field-input { flex: 1; }
+  .row-flex .row-hint {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* ============ ESTATE TOOL ============ */
+  .calc {
+    background: linear-gradient(180deg, var(--paper) 0%, var(--cream) 100%);
+    padding-top: 56px;
+  }
+
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .calc-form {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 32px;
+    position: sticky;
+    top: 24px;
+    box-shadow: 0 4px 24px rgba(12,30,62,0.04);
+  }
+
+  .calc-form-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+
+  .calc-form-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* RESULTS (estate scenarios) */
+  .results {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .scenario-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .scenario {
+    position: relative;
+    padding: 32px 24px 28px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    transition: all 0.3s ease;
+  }
+
+  .scenario.now {
+    background: linear-gradient(180deg, #fff 0%, #faf3f0 100%);
+    border-color: rgba(139,42,42,0.15);
+  }
+
+  .scenario.planned {
+    background: var(--navy);
+    color: var(--cream);
+    border-color: var(--gold);
+    box-shadow: 0 8px 32px rgba(12,30,62,0.18);
+    transform: translateY(-8px);
+  }
+
+  .scenario.substantive {
+    background: linear-gradient(180deg, #fff 0%, #faf6ed 100%);
+    border-color: var(--gold-light);
+  }
+
+  .scenario-tag {
+    position: absolute;
+    top: -12px;
+    left: 24px;
+    padding: 4px 12px;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .scenario.now .scenario-tag {
+    background: var(--danger);
+    color: var(--cream);
+  }
+  .scenario.planned .scenario-tag {
+    background: var(--gold);
+    color: var(--navy);
+  }
+  .scenario.substantive .scenario-tag {
+    background: var(--gold-deep);
+    color: var(--cream);
+  }
+
+  .scenario-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 19px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 6px;
+    color: var(--navy);
+  }
+  .scenario.planned .scenario-title { color: var(--cream); }
+
+  .scenario-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    line-height: 1.6;
+    min-height: 38px;
+  }
+  .scenario.planned .scenario-subtitle { color: rgba(250,246,237,0.7); }
+
+  .scenario-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    font-size: 13px;
+  }
+
+  .scenario-row .label {
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .scenario.planned .scenario-row .label { color: rgba(250,246,237,0.65); }
+
+  .scenario-row .value {
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 14px;
+  }
+  .scenario.planned .scenario-row .value { color: var(--cream); }
+
+  .scenario-highlight {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  .scenario.planned .scenario-highlight {
+    border-top-color: rgba(201,169,110,0.3);
+  }
+
+  .highlight-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .scenario.planned .highlight-label { color: var(--gold-light); }
+
+  .highlight-value {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--navy);
+    letter-spacing: -0.01em;
+    word-break: break-all;
+  }
+  .scenario.planned .highlight-value { color: var(--gold-light); }
+
+  .highlight-unit {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  .scenario.planned .highlight-unit { color: rgba(250,246,237,0.6); }
+
+  .scenario-delta {
+    margin-top: 14px;
+    padding: 10px 14px;
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .scenario.now .scenario-delta {
+    background: rgba(139,42,42,0.08);
+    color: var(--danger);
+  }
+
+  .scenario.planned .scenario-delta {
+    background: rgba(201,169,110,0.15);
+    color: var(--gold-light);
+    border: 1px solid rgba(201,169,110,0.3);
+  }
+
+  .scenario.substantive .scenario-delta {
+    background: rgba(167,138,82,0.1);
+    color: var(--gold-deep);
+  }
+
+  .scenario-delta strong {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 2px;
+  }
+
+  /* BENEFIT */
+  .benefit-section {
+    background: var(--cream);
+    margin-top: 8px;
+    padding: 48px 40px;
+    border: 1px solid var(--line-gold);
+  }
+
+  .benefit-header { text-align: center; margin-bottom: 36px; }
+
+  .benefit-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+
+  .benefit-subtitle { font-size: 13px; color: var(--muted); }
+
+  .benefit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .benefit-card {
+    padding: 28px 32px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    position: relative;
+  }
+
+  .benefit-card.planned {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: var(--cream);
+    border-color: var(--gold);
+    box-shadow: 0 6px 24px rgba(12,30,62,0.15);
+  }
+
+  .benefit-card.substantive {
+    background: var(--paper);
+    border-color: var(--gold-light);
+  }
+
+  .benefit-tag {
+    display: inline-block;
+    padding: 3px 12px;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .benefit-card.planned .benefit-tag {
+    background: var(--gold);
+    color: var(--navy);
+  }
+
+  .benefit-card.substantive .benefit-tag {
+    background: var(--gold-deep);
+    color: var(--cream);
+  }
+
+  .benefit-prefix {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .benefit-card.planned .benefit-prefix { color: rgba(250,246,237,0.7); }
+
+  .benefit-value {
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--navy);
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+    word-break: break-all;
+  }
+  .benefit-card.planned .benefit-value { color: var(--gold-light); }
+
+  .benefit-value .plus {
+    color: var(--gold);
+    margin-right: 4px;
+    font-weight: 600;
+  }
+
+  .benefit-card.substantive .benefit-value .plus { color: var(--gold-deep); }
+
+  .benefit-unit {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  .benefit-card.planned .benefit-unit { color: rgba(250,246,237,0.6); }
+
+  .benefit-bar {
+    height: 8px;
+    background: rgba(12,30,62,0.05);
+    margin-top: 18px;
+    overflow: hidden;
+  }
+  .benefit-card.planned .benefit-bar { background: rgba(201,169,110,0.18); }
+
+  .benefit-bar-fill {
+    height: 100%;
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .benefit-card.planned .benefit-bar-fill {
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  }
+  .benefit-card.substantive .benefit-bar-fill {
+    background: linear-gradient(90deg, var(--gold-deep), var(--gold));
+  }
+
+  .benefit-desc {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .benefit-card.planned .benefit-desc { color: rgba(250,246,237,0.7); }
+
+  .benefit-conclusion {
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--line-gold);
+    border-bottom: 1px solid var(--line-gold);
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(17px, 2vw, 22px);
+    font-weight: 500;
+    color: var(--navy);
+    letter-spacing: 0.05em;
+    line-height: 1.6;
+  }
+
+  .benefit-conclusion::before,
+  .benefit-conclusion::after {
+    content: '◆';
+    color: var(--gold);
+    font-size: 10px;
+    vertical-align: middle;
+    margin: 0 14px;
+  }
+
+  /* DETAIL TABLE */
+  .detail-section { background: var(--paper); }
+
+  .detail-table-wrap {
+    border: 1px solid var(--line);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .detail-table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .detail-table thead th {
+    padding: 18px 20px;
+    text-align: left;
+    font-family: 'Noto Serif TC', serif;
+    font-weight: 500;
+    font-size: 14px;
+    background: var(--navy);
+    color: var(--cream);
+    letter-spacing: 0.02em;
+    border-bottom: 2px solid var(--gold);
+    white-space: nowrap;
+  }
+
+  .detail-table thead th:not(:first-child) {
+    text-align: right;
+    border-left: 1px solid rgba(201,169,110,0.2);
+  }
+
+  .detail-table thead th .sub {
+    display: block;
+    font-size: 10px;
+    color: var(--gold-light);
+    margin-top: 4px;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+  }
+
+  .detail-table tbody td {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-soft);
+  }
+
+  .detail-table tbody td:first-child {
+    color: var(--ink);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  .detail-table tbody td:not(:first-child) {
+    text-align: right;
+    font-weight: 500;
+    border-left: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  .detail-table tbody tr.section-row td {
+    background: var(--cream);
+    font-weight: 500;
+    color: var(--navy);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 9px 20px;
+  }
+
+  .detail-table tbody tr.total-row td {
+    background: rgba(201,169,110,0.06);
+    font-weight: 600;
+    color: var(--navy);
+  }
+
+  .detail-table tbody tr.final-row td {
+    background: var(--navy);
+    color: var(--cream);
+    font-weight: 500;
+    font-size: 15px;
+    border-color: var(--gold);
+  }
+
+  .detail-table tbody tr.final-row td:first-child { color: var(--gold-light); }
+
+  .detail-table .neg { color: var(--danger-soft); }
+  .detail-table .pos { color: var(--success); }
+
+  .table-hint {
+    display: none;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+  }
+
+  /* FOOTER */
+  .footer {
+    background: var(--navy-deepest);
+    color: rgba(250,246,237,0.6);
+    padding: 36px 40px 28px;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .footer-inner { max-width: 1400px; margin: 0 auto; }
+
+  .law-notes {
+    font-size: 12px;
+    line-height: 1.8;
+    color: rgba(250,246,237,0.55);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .law-notes strong { color: var(--gold-light); font-weight: 500; }
+
+  .law-divider { color: rgba(201,169,110,0.3); margin: 0 10px; }
+
+  .disclaimer {
+    font-size: 11px;
+    line-height: 1.7;
+    color: rgba(250,246,237,0.4);
+    text-align: center;
+    border-top: 1px solid rgba(201,169,110,0.12);
+    padding-top: 16px;
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 1024px) {
+    section { padding: 40px 20px; }
+    .back-bar { padding: 12px 20px; }
+    .calc { padding-top: 32px; }
+
+    .home-hero { padding: 56px 20px 80px; }
+    .home-cards-section { padding: 0 20px 56px; }
+    .home-cards-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .income-warning { padding: 0 20px; }
+    .income-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .income-form { position: static; }
+    .stats-row { grid-template-columns: 1fr; }
+
+    .calc-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .calc-form {
+      position: static;
+      padding: 24px;
+    }
+    .scenario-cards {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .scenario.planned {
+      transform: none;
+      box-shadow: 0 6px 20px rgba(12,30,62,0.2);
+    }
+    .scenario-subtitle { min-height: 0; }
+
+    .benefit-section { padding: 32px 20px; }
+    .benefit-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .benefit-card { padding: 24px 22px; }
+
+    .table-hint { display: block; }
+    .detail-table thead th,
+    .detail-table tbody td { padding: 10px 14px; font-size: 12px; }
+    .detail-table tbody tr.section-row td { padding: 8px 14px; font-size: 11px; }
+    .detail-table tbody tr.final-row td { font-size: 13px; }
+
+    .footer { padding: 28px 20px 20px; }
+  }
+
+  @media (max-width: 600px) {
+    .number-grid { grid-template-columns: 1fr; }
+    .threshold-items-grid { grid-template-columns: 1fr; }
+    .stats-numbers-row { grid-template-columns: 1fr; gap: 16px; }
+    .highlight-value { font-size: 22px; }
+    .scenario { padding: 28px 20px 24px; }
+    .benefit-conclusion::before,
+    .benefit-conclusion::after { margin: 0 6px; }
+    .threshold-top { padding: 28px 24px 24px; }
+    .threshold-items { padding: 22px 24px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN SCREEN ===================== -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-lock">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="1"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <div class="login-title">存取受限 · Restricted Access</div>
+      <div class="login-subtitle">Tax Planning Suite</div>
+    </div>
+    <div class="login-body">
+      <div class="login-label">請輸入存取密碼</div>
+      <input type="password" id="password-input" class="login-input" placeholder="Password" autocomplete="off">
+      <div id="login-error" class="login-error">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" x2="12" y1="8" y2="12"/>
+          <line x1="12" x2="12.01" y1="16" y2="16"/>
+        </svg>
+        <span>密碼錯誤,請重試</span>
+      </div>
+      <button class="login-btn" id="login-btn">解 鎖 進 入</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== APP CONTAINER ===================== -->
+<div id="app" class="app">
+
+  <!-- =============== HOME / MENU =============== -->
+  <div id="view-home" class="tool-view show">
+    <div class="home-hero">
+      <div class="home-hero-inner">
+        <div class="home-eyebrow">High Net-Worth Tax Strategy</div>
+        <h1 class="home-title">稅務規劃試算工具集</h1>
+        <div class="home-subtitle">Tax Planning Calculator Suite</div>
+        <div class="home-divider"></div>
+      </div>
+    </div>
+
+    <div class="home-cards-section">
+      <div class="home-cards-grid">
+
+        <button class="menu-card" onclick="showView('income')">
+          <div class="menu-card-num">No. 01</div>
+          <div class="menu-card-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3v18h18"/>
+              <path d="M7 14l4-4 4 4 6-6"/>
+            </svg>
+          </div>
+          <div class="menu-card-title">基本稅額免稅門檻試算</div>
+          <div class="menu-card-subtitle">個人所得稅 ・ 海外所得規劃空間</div>
+          <ul class="menu-card-features">
+            <li>合併計稅 vs. 分開計稅自動比較</li>
+            <li>反推海外所得免稅門檻 (AMT 反算)</li>
+            <li>支援「詳細試算」與「快速反推」雙模式</li>
+          </ul>
+          <div class="menu-card-cta">
+            <span>進入工具</span>
+            <span class="menu-card-cta-arrow">→</span>
+          </div>
+        </button>
+
+        <button class="menu-card" onclick="showView('estate')">
+          <div class="menu-card-num">No. 02</div>
+          <div class="menu-card-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 21h18"/>
+              <path d="M5 21V8l7-5 7 5v13"/>
+              <path d="M9 21v-8h6v8"/>
+            </svg>
+          </div>
+          <div class="menu-card-title">遺產稅預留稅源規劃</div>
+          <div class="menu-card-subtitle">傳承稅源 ・ 三情境對比試算</div>
+          <ul class="menu-card-features">
+            <li>現況 / 有規劃 / 實質課稅 三情境對比</li>
+            <li>累進稅率 10% / 15% / 20% 完整明細</li>
+            <li>規劃效益視覺化呈現</li>
+          </ul>
+          <div class="menu-card-cta">
+            <span>進入工具</span>
+            <span class="menu-card-cta-arrow">→</span>
+          </div>
+        </button>
+
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="law-notes">
+          <strong>法源依據</strong>
+          <span class="law-divider">|</span>
+          所得稅法
+          <span class="law-divider">|</span>
+          所得基本稅額條例
+          <span class="law-divider">|</span>
+          遺產與贈與稅法
+        </p>
+        <p class="disclaimer">
+          本工具集僅供稅務規劃參考,實際個案應依國稅局核定為準,並建議諮詢專業稅務律師或會計師。
+        </p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- =============== INCOME TAX TOOL =============== -->
+  <div id="view-income" class="tool-view">
+    <div class="back-bar">
+      <button class="back-btn" onclick="showView('home')">
+        <span>←</span>
+        <span>返回工具選單</span>
+      </button>
+    </div>
+
+    <section>
+      <div class="section-eyebrow">No. 01 ・ Personal Income Tax</div>
+      <h2 class="section-title">基本稅額免稅門檻試算</h2>
+      <p class="section-intro">
+        計算個人綜合所得稅與基本所得稅額 (AMT) 之間的免稅空間,協助高所得人士評估海外所得、特定保險給付等加計項目之規劃彈性。
+      </p>
+    </section>
+
+    <div class="income-warning">
+      <div class="income-warning-inner">
+        <div class="income-warning-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" x2="12" y1="9" y2="13"/>
+            <line x1="12" x2="12.01" y1="17" y2="17"/>
+          </svg>
+        </div>
+        <div class="income-warning-text">
+          <strong>注意</strong>:本試算結果僅供稅務規劃參考,非正式申報依據。實際稅額以國稅局最終核定為準,建議諮詢專業會計師進行確認。
+        </div>
+      </div>
+    </div>
+
+    <section>
+      <div class="income-grid">
+
+        <!-- INPUT FORM -->
+        <div class="income-form">
+          <div class="income-tabs">
+            <button class="income-tab active" id="tab-detailed" onclick="switchTab('detailed')">詳細試算</button>
+            <button class="income-tab" id="tab-reverse" onclick="switchTab('reverse')">快速反推</button>
+          </div>
+
+          <div class="income-form-body">
+
+            <!-- Detailed inputs -->
+            <div id="detailed-inputs">
+              <div class="income-form-title">所得與扣除項目</div>
+              <div class="income-form-subtitle">115 年度 (2026) 預估版本</div>
+
+              <div class="form-section">
+                <div class="form-section-title">所得項目</div>
+                <div class="field">
+                  <label class="field-label"><span>股利所得</span><span class="field-hint">Dividend</span></label>
+                  <div class="field-input with-prefix">
+                    <span class="prefix">$</span>
+                    <input type="text" id="dividends" inputmode="numeric" value="5,000,000" class="text-right input-calc">
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label"><span>非股利之其他所得</span></label>
+                  <div class="field-input with-prefix">
+                    <span class="prefix">$</span>
+                    <input type="text" id="otherIncome" inputmode="numeric" value="5,000,000" class="text-right input-calc">
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title">申報戶與扣除</div>
+                <div class="field">
+                  <label class="field-label"><span>申報戶人口數</span><span class="field-hint">× 21.3 萬 / 人</span></label>
+                  <div class="row-flex">
+                    <div class="field-input with-suffix">
+                      <input type="text" id="householdSize" inputmode="numeric" value="4" class="text-right input-calc">
+                      <span class="suffix">人</span>
+                    </div>
+                  </div>
+                  <div class="form-section-hint">
+                    系統將自動比較「免稅額+扣除額」與「基本生活費總額」,擇高扣除。
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label"><span>免稅額</span><span class="field-hint">Exemption</span></label>
+                  <div class="field-input with-prefix">
+                    <span class="prefix">$</span>
+                    <input type="text" id="exemptions" inputmode="numeric" value="0" class="text-right input-calc">
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label"><span>扣除額</span><span class="field-hint">Deduction</span></label>
+                  <div class="field-input with-prefix">
+                    <span class="prefix">$</span>
+                    <input type="text" id="deductions" inputmode="numeric" value="0" class="text-right input-calc">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Reverse inputs -->
+            <div id="reverse-inputs" style="display:none">
+              <div class="income-form-title">由稅額反推</div>
+              <div class="income-form-subtitle">115 年度 (2026) 預估版本</div>
+
+              <div class="reverse-hint">
+                <strong>忘記所得細項?</strong><br>
+                請輸入您預估或記得的「一般所得稅額」,系統將自動反推級距與免稅空間。
+              </div>
+
+              <div class="field">
+                <label class="field-label"><span>您的一般所得稅額</span></label>
+                <div class="field-input with-prefix emphasized">
+                  <span class="prefix">$</span>
+                  <input type="text" id="inputTaxAmount" inputmode="numeric" value="3,000,000" class="text-right input-calc">
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- RESULTS -->
+        <div class="income-results">
+
+          <!-- Threshold card -->
+          <div class="threshold-card">
+            <div class="threshold-top">
+              <div class="threshold-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M2 12h20"/>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+                <span>基本所得額加計項目 ・ 免稅門檻</span>
+              </div>
+              <div class="threshold-num-wrap">
+                <span class="threshold-num" id="result-threshold">0</span>
+                <span class="threshold-unit">元</span>
+              </div>
+              <p class="threshold-explain">
+                意即:只要您的「加計項目」總額低於此數字,就不需額外繳納基本所得稅額。
+              </p>
+            </div>
+
+            <div class="threshold-items">
+              <div class="threshold-items-title">基本所得額加計項目包含</div>
+              <div class="threshold-items-grid">
+                <div class="threshold-item">海外所得 (含 CFC)</div>
+                <div class="threshold-item">特定保險給付 &gt; 3,740 萬</div>
+                <div class="threshold-item">未上市櫃及私募基金交易所得</div>
+                <div class="threshold-item minor">非現金捐贈扣除額</div>
+                <div class="threshold-item minor full-row">
+                  分開計稅股利所得 <span style="font-size:11px;color:var(--muted-soft);margin-left:6px;">(若選擇分開計稅則已計入)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats row -->
+          <div class="stats-row">
+
+            <!-- Stats card: tax + rate + mode -->
+            <div class="stats-card">
+              <div class="stats-card-label">所得稅計算結果</div>
+
+              <!-- Net Income block (ABOVE tax) -->
+              <div class="net-income-block">
+                <div class="net-income-tiny-label">綜合所得淨額</div>
+                <div>
+                  <span class="net-income-num" id="result-net-income">$0</span>
+                  <span class="net-income-unit">元</span>
+                </div>
+              </div>
+
+              <div class="stats-numbers-row">
+                <div class="stats-num-block">
+                  <div class="mini-label">應繳 (退) 稅額</div>
+                  <div class="stats-num-tax" id="result-tax">$0</div>
+                </div>
+                <div class="stats-num-block">
+                  <div class="mini-label">邊際稅率</div>
+                  <div class="stats-num-rate" id="result-marginal-rate">0%</div>
+                </div>
+              </div>
+
+              <div class="stats-mode-block">
+                <div class="mini-label">建議計稅方式</div>
+                <div class="stats-mode-row">
+                  <span class="stats-mode-text" id="result-mode">計算中...</span>
+                  <span class="stats-mode-savings" id="result-savings"></span>
+                </div>
+                <div class="stats-dividend-credit" id="dividend-credit-info"></div>
+              </div>
+            </div>
+
+            <!-- Effective rate card -->
+            <div class="stats-card stats-card-effective">
+              <div class="stats-card-label">若用滿免稅門檻 ・ 實質稅率</div>
+              <div style="display:flex;align-items:baseline;gap:10px;margin-top:6px;">
+                <span class="effective-num" id="result-effective-rate">0.00%</span>
+                <span class="effective-note">應繳稅額 / 總所得</span>
+              </div>
+              <div class="stats-formula">
+                公式:應繳稅額 ÷ (綜合所得淨額 + 基本所得額加計項目)。<br>
+                當您善用海外所得空間時,整體稅負成本將大幅降低。
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="law-notes">
+          <strong>法源依據</strong>
+          <span class="law-divider">|</span>
+          所得稅法 §15 (合併 / 分開計稅)
+          <span class="law-divider">|</span>
+          所得基本稅額條例 §12 (最低稅負每戶免稅額 750 萬)
+        </p>
+        <p class="disclaimer">
+          本試算工具僅供參考,實際個案應依國稅局核定為準,並建議諮詢專業稅務律師或會計師。
+        </p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- =============== ESTATE TAX TOOL =============== -->
+  <div id="view-estate" class="tool-view">
+    <div class="back-bar">
+      <button class="back-btn" onclick="showView('home')">
+        <span>←</span>
+        <span>返回工具選單</span>
+      </button>
+    </div>
+
+    <section class="calc">
+      <div class="section-eyebrow">No. 02 ・ Estate Tax Reserve</div>
+      <h2 class="section-title">客戶情境試算</h2>
+      <p class="section-intro">
+        輸入客戶的資產規模、家庭組成與保險規劃內容,即時對比三種情境下的應納遺產稅與實際傳承金額。所有試算依據 2025 年起適用之遺產稅免稅額與扣除額標準。
+      </p>
+
+      <div class="calc-grid">
+        <!-- INPUT FORM -->
+        <div class="calc-form">
+          <div class="calc-form-title">客戶情境參數</div>
+          <div class="calc-form-subtitle">所有金額單位:新台幣 (元)</div>
+
+          <div class="form-section">
+            <div class="form-section-title">資產與保險</div>
+            <div class="field">
+              <label class="field-label">
+                <span>資產總額</span>
+                <span class="field-hint">土地・房屋・股票・存款</span>
+              </label>
+              <div class="field-input with-suffix">
+                <input type="text" id="assets" inputmode="numeric" value="250,000,000">
+                <span class="suffix">元</span>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">
+                <span>預計繳納保費</span>
+                <span class="field-hint">躉繳或累計保費</span>
+              </label>
+              <div class="field-input with-suffix">
+                <input type="text" id="premium" inputmode="numeric" value="30,000,000">
+                <span class="suffix">元</span>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">
+                <span>身故保險金</span>
+                <span class="field-hint">死亡給付</span>
+              </label>
+              <div class="field-input with-suffix">
+                <input type="text" id="insurance" inputmode="numeric" value="60,000,000">
+                <span class="suffix">元</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">家庭成員 (繼承人)</div>
+            <div class="number-grid">
+              <div class="field">
+                <label class="field-label"><span>配偶</span></label>
+                <div class="field-input">
+                  <select id="spouse">
+                    <option value="1">有 (1人)</option>
+                    <option value="0">無</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label"><span>直系血親卑親屬</span></label>
+                <div class="field-input with-suffix">
+                  <input type="text" id="children" inputmode="numeric" value="2">
+                  <span class="suffix">人</span>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label"><span>父母在世</span></label>
+                <div class="field-input with-suffix">
+                  <input type="text" id="parents" inputmode="numeric" value="0">
+                  <span class="suffix">人</span>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label"><span>身障人數</span></label>
+                <div class="field-input with-suffix">
+                  <input type="text" id="disabled" inputmode="numeric" value="0">
+                  <span class="suffix">人</span>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label"><span>扶養兄弟姊妹</span></label>
+                <div class="field-input with-suffix">
+                  <input type="text" id="siblings" inputmode="numeric" value="0">
+                  <span class="suffix">人</span>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label"><span>剩餘財產請求權</span></label>
+                <div class="field-input with-suffix">
+                  <input type="text" id="claim1030" inputmode="numeric" value="0">
+                  <span class="suffix">元</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESULTS -->
+        <div class="results">
+
+          <div class="scenario-cards">
+
+            <div class="scenario now">
+              <div class="scenario-tag">現況</div>
+              <div class="scenario-title">未做任何規劃</div>
+              <div class="scenario-subtitle">資產原封不動,遺產稅須由後代以現金繳納</div>
+              <div class="scenario-row"><span class="label">應稅遺產總額</span><span class="value" id="r1-taxable">—</span></div>
+              <div class="scenario-row"><span class="label">遺產淨額</span><span class="value" id="r1-net">—</span></div>
+              <div class="scenario-row"><span class="label">應納遺產稅</span><span class="value" id="r1-tax">—</span></div>
+              <div class="scenario-row"><span class="label">身故保險金</span><span class="value" id="r1-insurance">—</span></div>
+
+              <div class="scenario-highlight">
+                <div class="highlight-label">實際傳承後代</div>
+                <div class="highlight-value"><span id="r1-total">—</span><span class="highlight-unit">元</span></div>
+              </div>
+              <div class="scenario-delta" id="r1-delta">基準值</div>
+            </div>
+
+            <div class="scenario planned">
+              <div class="scenario-tag">推薦</div>
+              <div class="scenario-title">有保險規劃</div>
+              <div class="scenario-subtitle">保險金不計入遺產,並提供繳稅資金</div>
+              <div class="scenario-row"><span class="label">應稅遺產總額</span><span class="value" id="r2-taxable">—</span></div>
+              <div class="scenario-row"><span class="label">遺產淨額</span><span class="value" id="r2-net">—</span></div>
+              <div class="scenario-row"><span class="label">應納遺產稅</span><span class="value" id="r2-tax">—</span></div>
+              <div class="scenario-row"><span class="label">身故保險金</span><span class="value" id="r2-insurance">—</span></div>
+
+              <div class="scenario-highlight">
+                <div class="highlight-label">實際傳承後代</div>
+                <div class="highlight-value"><span id="r2-total">—</span><span class="highlight-unit">元</span></div>
+              </div>
+              <div class="scenario-delta" id="r2-delta">—</div>
+            </div>
+
+            <div class="scenario substantive">
+              <div class="scenario-tag">最壞情境</div>
+              <div class="scenario-title">有規劃但實質課稅</div>
+              <div class="scenario-subtitle">保險金被計入遺產重新課稅</div>
+              <div class="scenario-row"><span class="label">應稅遺產總額</span><span class="value" id="r3-taxable">—</span></div>
+              <div class="scenario-row"><span class="label">遺產淨額</span><span class="value" id="r3-net">—</span></div>
+              <div class="scenario-row"><span class="label">應納遺產稅</span><span class="value" id="r3-tax">—</span></div>
+              <div class="scenario-row"><span class="label">身故保險金</span><span class="value" id="r3-insurance">—</span></div>
+
+              <div class="scenario-highlight">
+                <div class="highlight-label">實際傳承後代</div>
+                <div class="highlight-value"><span id="r3-total">—</span><span class="highlight-unit">元</span></div>
+              </div>
+              <div class="scenario-delta" id="r3-delta">—</div>
+            </div>
+
+          </div>
+
+          <!-- BENEFIT -->
+          <div class="benefit-section">
+            <div class="benefit-header">
+              <div class="benefit-title">規劃效益差距</div>
+              <div class="benefit-subtitle">以「現況」為基準零點,保險規劃多傳承的金額</div>
+            </div>
+
+            <div class="benefit-grid">
+              <div class="benefit-card planned">
+                <div class="benefit-tag">有規劃</div>
+                <div class="benefit-prefix">較現況多傳承</div>
+                <div class="benefit-value"><span class="plus">+</span><span id="b1-val">—</span><span class="benefit-unit">元</span></div>
+                <div class="benefit-bar"><div class="benefit-bar-fill" id="b1-bar" style="width:0%"></div></div>
+                <div class="benefit-desc">保險金獨立給付且不計入遺產,效益最大化</div>
+              </div>
+
+              <div class="benefit-card substantive">
+                <div class="benefit-tag">最壞情境</div>
+                <div class="benefit-prefix">即便實質課稅,仍多傳承</div>
+                <div class="benefit-value"><span class="plus">+</span><span id="b2-val">—</span><span class="benefit-unit">元</span></div>
+                <div class="benefit-bar"><div class="benefit-bar-fill" id="b2-bar" style="width:0%"></div></div>
+                <div class="benefit-desc">保險金被計入遺產重新課稅,仍勝過無規劃</div>
+              </div>
+            </div>
+
+            <div class="benefit-conclusion">
+              不論最壞情境如何,保險規劃皆優於無規劃
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DETAIL TABLE -->
+    <section class="detail-section">
+      <h2 class="section-title">完整試算明細</h2>
+      <p class="section-intro">
+        詳列三情境下的遺產稅完整計算過程,從應稅遺產、各項扣除額、累進稅率到最終實際傳承金額。
+      </p>
+
+      <p class="table-hint">→ 表格可左右滑動查看完整內容</p>
+
+      <div class="detail-table-wrap">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>現況<span class="sub">SCENARIO 01</span></th>
+              <th>有規劃<span class="sub">SCENARIO 02</span></th>
+              <th>規劃但實質課稅<span class="sub">SCENARIO 03</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="section-row"><td colspan="4">應稅遺產計算</td></tr>
+            <tr><td>資產總額</td><td id="d-asset-1">—</td><td id="d-asset-2">—</td><td id="d-asset-3">—</td></tr>
+            <tr><td>減:本次預計繳納保費</td><td id="d-prem-1">—</td><td id="d-prem-2">—</td><td id="d-prem-3">—</td></tr>
+            <tr><td>加:身故保險金 (實質課稅)</td><td id="d-ins-1">—</td><td id="d-ins-2">—</td><td id="d-ins-3">—</td></tr>
+            <tr class="total-row"><td>應稅遺產總額</td><td id="d-taxable-1">—</td><td id="d-taxable-2">—</td><td id="d-taxable-3">—</td></tr>
+
+            <tr class="section-row"><td colspan="4">扣除額</td></tr>
+            <tr><td>減:免稅額 (1,333萬)</td><td id="d-exempt-1">—</td><td id="d-exempt-2">—</td><td id="d-exempt-3">—</td></tr>
+            <tr><td>減:配偶扣除額 (553萬)</td><td id="d-spouse-1">—</td><td id="d-spouse-2">—</td><td id="d-spouse-3">—</td></tr>
+            <tr><td>減:直系血親卑親屬 (56萬/人)</td><td id="d-child-1">—</td><td id="d-child-2">—</td><td id="d-child-3">—</td></tr>
+            <tr><td>減:父母扣除額 (138萬/人)</td><td id="d-parent-1">—</td><td id="d-parent-2">—</td><td id="d-parent-3">—</td></tr>
+            <tr><td>減:身心障礙 (693萬/人)</td><td id="d-dis-1">—</td><td id="d-dis-2">—</td><td id="d-dis-3">—</td></tr>
+            <tr><td>減:扶養兄弟姊妹/祖父母 (56萬/人)</td><td id="d-sib-1">—</td><td id="d-sib-2">—</td><td id="d-sib-3">—</td></tr>
+            <tr><td>減:喪葬費扣除額 (138萬)</td><td id="d-fun-1">—</td><td id="d-fun-2">—</td><td id="d-fun-3">—</td></tr>
+            <tr><td>減:剩餘財產差額分配請求權</td><td id="d-claim-1">—</td><td id="d-claim-2">—</td><td id="d-claim-3">—</td></tr>
+            <tr class="total-row"><td>遺產淨額</td><td id="d-net-1">—</td><td id="d-net-2">—</td><td id="d-net-3">—</td></tr>
+
+            <tr class="section-row"><td colspan="4">累進稅率計算</td></tr>
+            <tr><td>5,621萬以下 × 10%</td><td id="d-t1-1">—</td><td id="d-t1-2">—</td><td id="d-t1-3">—</td></tr>
+            <tr><td>5,621萬 ~ 1億1,242萬 × 15%</td><td id="d-t2-1">—</td><td id="d-t2-2">—</td><td id="d-t2-3">—</td></tr>
+            <tr><td>1億1,242萬以上 × 20%</td><td id="d-t3-1">—</td><td id="d-t3-2">—</td><td id="d-t3-3">—</td></tr>
+            <tr class="total-row"><td>應納遺產稅額</td><td id="d-tax-1">—</td><td id="d-tax-2">—</td><td id="d-tax-3">—</td></tr>
+
+            <tr class="section-row"><td colspan="4">傳承結果</td></tr>
+            <tr><td>身故保險金給付 (指定受益人)</td><td id="d-pay-1">—</td><td id="d-pay-2">—</td><td id="d-pay-3">—</td></tr>
+            <tr><td>稅後可分得遺產 (不含保險)</td><td id="d-after-1">—</td><td id="d-after-2">—</td><td id="d-after-3">—</td></tr>
+            <tr><td>稅源缺口 (負數=不足)</td><td id="d-gap-1">—</td><td id="d-gap-2">—</td><td id="d-gap-3">—</td></tr>
+            <tr class="final-row"><td>實際傳承後代金額</td><td id="d-total-1">—</td><td id="d-total-2">—</td><td id="d-total-3">—</td></tr>
+            <tr><td style="color:var(--gold-deep);font-weight:500;">規劃效益 (vs. 現況)</td><td id="d-benefit-1">基準值</td><td id="d-benefit-2">—</td><td id="d-benefit-3">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="law-notes">
+          <strong>法源依據</strong>
+          <span class="law-divider">|</span>
+          遺產與贈與稅法 §16 (人壽保險金不計入遺產總額)
+          <span class="law-divider">|</span>
+          所得基本稅額條例 §12 (最低稅負每戶免稅額 3,740 萬)
+        </p>
+        <p class="disclaimer">
+          本試算工具僅供參考,實際個案應依國稅局核定為準,並建議諮詢專業稅務律師或會計師。<br>
+          實質課稅原則之適用情形依個案事實認定,常見因素包含:高齡投保、重病投保、躉繳投保、舉債投保、保險給付低於或等於已繳保費等。
+        </p>
+      </div>
+    </footer>
+
+  </div>
+
+</div>
+
+<!-- ===================== SCRIPTS ===================== -->
+<script>
+/* ========================================
+   AUTH + VIEW SWITCHING
+   ======================================== */
+const PASSWORD = 'tax';
+let isAuthed = false;
+
+function checkPass() {
+  const input = document.getElementById('password-input');
+  const err = document.getElementById('login-error');
+  const loginScreen = document.getElementById('login-screen');
+  const app = document.getElementById('app');
+
+  if (input.value === PASSWORD) {
+    isAuthed = true;
+    err.classList.remove('show');
+    loginScreen.style.opacity = '0';
+    setTimeout(() => {
+      loginScreen.style.display = 'none';
+      app.classList.add('show');
+    }, 500);
+  } else {
+    err.classList.remove('show');
+    void err.offsetWidth;
+    err.classList.add('show');
+    input.value = '';
+    input.focus();
+  }
+}
+
+document.getElementById('login-btn').addEventListener('click', checkPass);
+document.getElementById('password-input').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') checkPass();
+});
+
+function showView(name) {
+  if (!isAuthed) return;
+  ['home', 'income', 'estate'].forEach(v => {
+    const el = document.getElementById('view-' + v);
+    if (el) el.classList.toggle('show', v === name);
+  });
+  // scroll to top on view change
+  window.scrollTo({ top: 0, behavior: 'instant' });
+
+  // re-trigger calc when entering a tool (in case inputs changed)
+  if (name === 'income') calculateIncome();
+  if (name === 'estate') updateEstate();
+}
+
+/* ========================================
+   INCOME TAX TOOL (preserved logic)
+   ======================================== */
+const TAX_BRACKETS = [
+  { limit: 610000, rate: 0.05, diff: 0 },
+  { limit: 1380000, rate: 0.12, diff: 42700 },
+  { limit: 2770000, rate: 0.20, diff: 153100 },
+  { limit: 5190000, rate: 0.30, diff: 430100 },
+  { limit: Infinity, rate: 0.40, diff: 949100 }
+];
+
+const DIVIDEND_SEPARATE_RATE = 0.28;
+const BASIC_TAX_EXEMPTION = 7500000;
+const BASIC_TAX_RATE = 0.20;
+const BASIC_LIVING_EXPENSE_PER_PERSON = 213000;
+
+let incomeState = {
+  mode: 'detailed',
+  dividends: 5000000,
+  otherIncome: 5000000,
+  householdSize: 4,
+  exemptions: 0,
+  deductions: 0,
+  inputTaxAmount: 3000000
+};
+
+const formatNumber = (num) => num.toLocaleString('en-US');
+
+const calculateProgressiveTax = (netIncome) => {
+  if (netIncome <= 0) return 0;
+  for (let bracket of TAX_BRACKETS) {
+    if (netIncome <= bracket.limit) {
+      return Math.round(netIncome * bracket.rate - bracket.diff);
+    }
+  }
+  return 0;
+};
+
+const getMarginalRate = (netIncome) => {
+  if (netIncome <= 0) return 0;
+  for (let bracket of TAX_BRACKETS) {
+    if (netIncome <= bracket.limit) return bracket.rate;
+  }
+  return 0.40;
+};
+
+const calculateNetIncomeFromTax = (taxAmount) => {
+  if (taxAmount <= 0) return 0;
+  for (let bracket of TAX_BRACKETS) {
+    const maxTaxInBracket = bracket.limit === Infinity ? Infinity : (bracket.limit * bracket.rate - bracket.diff);
+    if (taxAmount <= maxTaxInBracket) {
+      return Math.round((taxAmount + bracket.diff) / bracket.rate);
+    }
+  }
+  return 0;
+};
+
+function switchTab(tabName) {
+  incomeState.mode = tabName;
+  const tabD = document.getElementById('tab-detailed');
+  const tabR = document.getElementById('tab-reverse');
+  const inputsD = document.getElementById('detailed-inputs');
+  const inputsR = document.getElementById('reverse-inputs');
+
+  if (tabName === 'detailed') {
+    tabD.classList.add('active');
+    tabR.classList.remove('active');
+    inputsD.style.display = '';
+    inputsR.style.display = 'none';
+  } else {
+    tabR.classList.add('active');
+    tabD.classList.remove('active');
+    inputsD.style.display = 'none';
+    inputsR.style.display = '';
+  }
+  calculateIncome();
+}
+
+function calculateIncome() {
+  let result = {};
+
+  if (incomeState.mode === 'detailed') {
+    const totalBasicLiving = incomeState.householdSize * BASIC_LIVING_EXPENSE_PER_PERSON;
+    const sumExemptionsDeductions = incomeState.exemptions + incomeState.deductions;
+    const basicLivingDiff = Math.max(0, totalBasicLiving - sumExemptionsDeductions);
+    const totalDeductionsUsed = sumExemptionsDeductions + basicLivingDiff;
+
+    // Merged
+    const totalIncome = incomeState.dividends + incomeState.otherIncome;
+    const netIncomeMerged = Math.max(0, totalIncome - totalDeductionsUsed);
+    const taxMergedGross = calculateProgressiveTax(netIncomeMerged);
+
+    let dividendCredit = 0;
+    if (incomeState.dividends > 0) {
+      dividendCredit = Math.min(incomeState.dividends * 0.085, 80000);
+    }
+    const taxMergedNet = taxMergedGross - dividendCredit;
+
+    // Separated
+    const netIncomeOther = Math.max(0, incomeState.otherIncome - totalDeductionsUsed);
+    const taxOther = calculateProgressiveTax(netIncomeOther);
+    const taxSeparatedDividends = Math.round(incomeState.dividends * DIVIDEND_SEPARATE_RATE);
+    const taxSeparatedTotal = taxOther + taxSeparatedDividends;
+
+    const isMergedBetter = taxMergedNet <= taxSeparatedTotal;
+    const bestTaxPayable = isMergedBetter ? taxMergedNet : taxSeparatedTotal;
+    const savedAmount = Math.abs(taxMergedNet - taxSeparatedTotal);
+
+    // AMT reverse
+    let taxBaseForAMT_Reverse = 0;
+    let netIncomeForAMT_Base = 0;
+
+    if (isMergedBetter) {
+      taxBaseForAMT_Reverse = taxMergedGross;
+      netIncomeForAMT_Base = netIncomeMerged;
+    } else {
+      taxBaseForAMT_Reverse = taxSeparatedTotal;
+      netIncomeForAMT_Base = netIncomeOther + incomeState.dividends;
+    }
+
+    let addOnThreshold = (taxBaseForAMT_Reverse / BASIC_TAX_RATE) - netIncomeForAMT_Base + BASIC_TAX_EXEMPTION;
+    if (addOnThreshold < 0) addOnThreshold = 0;
+
+    const marginalRate = isMergedBetter ? getMarginalRate(netIncomeMerged) : getMarginalRate(netIncomeOther);
+
+    const totalWealth = netIncomeForAMT_Base + addOnThreshold;
+    const effectiveRate = totalWealth > 0 ? (bestTaxPayable / totalWealth) : 0;
+
+    // 綜合所得淨額 (per Taiwan tax terminology: amount taxed at progressive rates)
+    const displayedNetIncome = isMergedBetter ? netIncomeMerged : netIncomeOther;
+
+    result = {
+      tax: bestTaxPayable,
+      threshold: addOnThreshold,
+      marginalRate: marginalRate,
+      effectiveRate: effectiveRate,
+      modeText: isMergedBetter ? '合併計稅' : '分開計稅',
+      savingsText: isMergedBetter
+        ? `較分開計稅省 $${formatNumber(savedAmount)}`
+        : `較合併計稅省 $${formatNumber(savedAmount)}`,
+      dividendCreditAmount: isMergedBetter ? dividendCredit : 0,
+      netIncome: displayedNetIncome
+    };
+
+  } else {
+    // Reverse mode
+    const impliedNetIncome = calculateNetIncomeFromTax(incomeState.inputTaxAmount);
+    const marginalRate = getMarginalRate(impliedNetIncome);
+    let addOnThreshold = (incomeState.inputTaxAmount / BASIC_TAX_RATE) - impliedNetIncome + BASIC_TAX_EXEMPTION;
+    if (addOnThreshold < 0) addOnThreshold = 0;
+    const totalWealth = impliedNetIncome + addOnThreshold;
+    const effectiveRate = totalWealth > 0 ? (incomeState.inputTaxAmount / totalWealth) : 0;
+
+    result = {
+      tax: incomeState.inputTaxAmount,
+      threshold: addOnThreshold,
+      marginalRate: marginalRate,
+      effectiveRate: effectiveRate,
+      modeText: '依輸入稅額反推',
+      savingsText: '',
+      dividendCreditAmount: 0,
+      netIncome: impliedNetIncome
+    };
+  }
+
+  updateIncomeUI(result);
+}
+
+function updateIncomeUI(result) {
+  // Threshold
+  document.getElementById('result-threshold').textContent = formatNumber(Math.floor(result.threshold));
+
+  // Net income (above tax)
+  document.getElementById('result-net-income').textContent = '$' + formatNumber(Math.floor(result.netIncome));
+
+  // Tax amount (handle negative)
+  const taxEl = document.getElementById('result-tax');
+  const taxValue = Math.floor(result.tax);
+  if (taxValue < 0) {
+    taxEl.textContent = '($' + formatNumber(Math.abs(taxValue)) + ')';
+    taxEl.classList.add('negative');
+  } else {
+    taxEl.textContent = '$' + formatNumber(taxValue);
+    taxEl.classList.remove('negative');
+  }
+
+  // Mode + savings
+  document.getElementById('result-mode').textContent = result.modeText;
+  const savingsEl = document.getElementById('result-savings');
+  savingsEl.textContent = result.savingsText;
+  savingsEl.style.display = result.savingsText ? 'inline-block' : 'none';
+
+  // Dividend credit
+  const creditEl = document.getElementById('dividend-credit-info');
+  if (result.dividendCreditAmount > 0) {
+    creditEl.textContent = `已扣除股利可抵減稅額 $${formatNumber(result.dividendCreditAmount)}`;
+    creditEl.classList.add('show');
+  } else {
+    creditEl.classList.remove('show');
+  }
+
+  // Marginal rate
+  document.getElementById('result-marginal-rate').textContent = `${(result.marginalRate * 100).toFixed(0)}%`;
+
+  // Effective rate
+  document.getElementById('result-effective-rate').textContent = (result.effectiveRate * 100).toFixed(2) + '%';
+}
+
+// Attach handlers for income tool's input-calc inputs (with caret preservation)
+document.querySelectorAll('#view-income .input-calc').forEach(input => {
+  input.addEventListener('input', (e) => {
+    const el = e.target;
+    const selectionStart = el.selectionStart;
+    const oldVal = el.value;
+    let rawVal = oldVal.replace(/,/g, '');
+
+    if (!rawVal) {
+      incomeState[el.id] = 0;
+      el.value = '';
+      calculateIncome();
+      return;
+    }
+
+    const num = parseInt(rawVal, 10);
+    incomeState[el.id] = num;
+    const newVal = num.toLocaleString('en-US');
+
+    if (oldVal !== newVal) {
+      el.value = newVal;
+      const digitsBeforeCursor = oldVal.slice(0, selectionStart).replace(/,/g, '').length;
+      let newPos = 0, digitsEncountered = 0;
+      for (let i = 0; i < newVal.length; i++) {
+        if (digitsEncountered === digitsBeforeCursor) { newPos = i; break; }
+        if (/\d/.test(newVal[i])) digitsEncountered++;
+        newPos = i + 1;
+      }
+      el.setSelectionRange(newPos, newPos);
+    }
+    calculateIncome();
+  });
+});
+
+/* ========================================
+   ESTATE TAX TOOL (preserved logic)
+   ======================================== */
+function formatThousands(str) {
+  const digits = (str || '').replace(/[^\d]/g, '');
+  if (!digits) return '';
+  return parseInt(digits, 10).toLocaleString('en-US');
+}
+
+function getNum(id) {
+  const el = document.getElementById(id);
+  if (!el) return 0;
+  if (el.tagName === 'SELECT') return +el.value || 0;
+  const cleaned = (el.value || '').replace(/[^\d]/g, '');
+  return cleaned ? parseInt(cleaned, 10) : 0;
+}
+
+function attachThousandsFormatting(input) {
+  input.addEventListener('input', function(e) {
+    const oldValue = e.target.value;
+    const oldCursor = e.target.selectionStart;
+    const digitsBefore = oldValue.slice(0, oldCursor).replace(/[^\d]/g, '').length;
+
+    const formatted = formatThousands(oldValue);
+    e.target.value = formatted;
+
+    let newCursor = 0, count = 0;
+    while (newCursor < formatted.length && count < digitsBefore) {
+      if (/\d/.test(formatted[newCursor])) count++;
+      newCursor++;
+    }
+    e.target.setSelectionRange(newCursor, newCursor);
+
+    updateEstate();
+  });
+
+  input.addEventListener('paste', function(e) {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    const digits = text.replace(/[^\d]/g, '');
+    if (digits) {
+      e.target.value = formatThousands(digits);
+      updateEstate();
+    }
+  });
+}
+
+// Attach ONLY to estate tool's text/numeric inputs
+document.querySelectorAll('#view-estate input[type="text"][inputmode="numeric"]').forEach(attachThousandsFormatting);
+document.querySelectorAll('#view-estate select').forEach(el => el.addEventListener('change', updateEstate));
+
+const fmt = (n) => {
+  if (n === 0 || n === null || n === undefined) return '—';
+  if (Math.abs(n) < 1) return '—';
+  return Math.round(n).toLocaleString('en-US');
+};
+
+function calcTax(net) {
+  if (net <= 0) return 0;
+  const t1 = 56210000, t2 = 112420000;
+  if (net <= t1) return net * 0.1;
+  if (net <= t2) return t1 * 0.1 + (net - t1) * 0.15;
+  return t1 * 0.1 + (t2 - t1) * 0.15 + (net - t2) * 0.2;
+}
+
+function calcTaxBreakdown(net) {
+  const t1 = 56210000, t2 = 112420000;
+  let a = 0, b = 0, c = 0;
+  if (net <= 0) return { t1: a, t2: b, t3: c };
+  if (net <= t1) {
+    a = net * 0.1;
+  } else if (net <= t2) {
+    a = t1 * 0.1;
+    b = (net - t1) * 0.15;
+  } else {
+    a = t1 * 0.1;
+    b = (t2 - t1) * 0.15;
+    c = (net - t2) * 0.2;
+  }
+  return { t1: a, t2: b, t3: c };
+}
+
+function updateEstate() {
+  const assets = getNum('assets');
+  const premium = getNum('premium');
+  const insurance = getNum('insurance');
+  const spouse = getNum('spouse');
+  const children = getNum('children');
+  const parents = getNum('parents');
+  const disabled = getNum('disabled');
+  const siblings = getNum('siblings');
+  const claim1030 = getNum('claim1030');
+
+  const exempt = 13330000;
+  const dSpouse = spouse * 5530000;
+  const dChild = children * 560000;
+  const dParent = parents * 1380000;
+  const dDis = disabled * 6930000;
+  const dSib = siblings * 560000;
+  const funeral = 1380000;
+  const totalDeduct = exempt + dSpouse + dChild + dParent + dDis + dSib + funeral + claim1030;
+
+  const scenarios = [
+    { asset: assets, premium: 0, insAdd: 0, pay: 0, taxable: assets },
+    { asset: assets, premium: premium, insAdd: 0, pay: insurance, taxable: assets - premium },
+    { asset: assets, premium: premium, insAdd: insurance, pay: insurance, taxable: assets - premium + insurance }
+  ];
+
+  const results = scenarios.map(s => {
+    const net = Math.max(0, s.taxable - totalDeduct);
+    const tax = calcTax(net);
+    const tb = calcTaxBreakdown(net);
+    const realAsset = s.asset - s.premium;
+    const afterTax = realAsset - tax;
+    const total = afterTax + s.pay;
+    const gap = s.pay - tax;
+    return { ...s, net, tax, tb, afterTax, total, gap };
+  });
+
+  const baseTotal = results[0].total;
+
+  results.forEach((r, i) => {
+    const idx = i + 1;
+    document.getElementById(`r${idx}-taxable`).textContent = fmt(r.taxable);
+    document.getElementById(`r${idx}-net`).textContent = fmt(r.net);
+    document.getElementById(`r${idx}-tax`).textContent = fmt(r.tax);
+    document.getElementById(`r${idx}-insurance`).textContent = fmt(r.pay);
+    document.getElementById(`r${idx}-total`).textContent = fmt(r.total);
+
+    const delta = r.total - baseTotal;
+    const deltaEl = document.getElementById(`r${idx}-delta`);
+    if (i === 0) {
+      if (r.gap < 0) {
+        deltaEl.innerHTML = `稅源不足 <strong>${fmt(Math.abs(r.gap))}</strong> 元`;
+      } else {
+        deltaEl.innerHTML = `基準情境`;
+      }
+    } else {
+      const sign = delta > 0 ? '+' : '';
+      deltaEl.innerHTML = `較現況多傳承<br><strong>${sign}${fmt(delta)}</strong> 元`;
+    }
+  });
+
+  const benefit2 = results[1].total - baseTotal;
+  const benefit3 = results[2].total - baseTotal;
+  const maxBenefit = Math.max(Math.abs(benefit2), Math.abs(benefit3), 1);
+
+  document.getElementById('b1-val').textContent = fmt(Math.max(0, benefit2));
+  document.getElementById('b2-val').textContent = fmt(Math.max(0, benefit3));
+
+  document.getElementById('b1-bar').style.width = ((Math.max(0, benefit2) / maxBenefit) * 100) + '%';
+  document.getElementById('b2-bar').style.width = ((Math.max(0, benefit3) / maxBenefit) * 100) + '%';
+
+  const detail = (key, vals) => {
+    vals.forEach((v, i) => {
+      const el = document.getElementById(`d-${key}-${i+1}`);
+      if (!el) return;
+      el.textContent = (v === 0 || v === null) ? '—' : (typeof v === 'string' ? v : fmt(v));
+    });
+  };
+
+  detail('asset', [assets, assets, assets]);
+  detail('prem', [0, -premium, -premium]);
+  detail('ins', [0, 0, insurance]);
+  detail('taxable', results.map(r => r.taxable));
+  detail('exempt', [-exempt, -exempt, -exempt]);
+  detail('spouse', [-dSpouse, -dSpouse, -dSpouse]);
+  detail('child', [-dChild, -dChild, -dChild]);
+  detail('parent', [-dParent, -dParent, -dParent]);
+  detail('dis', [-dDis, -dDis, -dDis]);
+  detail('sib', [-dSib, -dSib, -dSib]);
+  detail('fun', [-funeral, -funeral, -funeral]);
+  detail('claim', [-claim1030, -claim1030, -claim1030]);
+  detail('net', results.map(r => r.net));
+  detail('t1', results.map(r => r.tb.t1));
+  detail('t2', results.map(r => r.tb.t2));
+  detail('t3', results.map(r => r.tb.t3));
+  detail('tax', results.map(r => r.tax));
+  detail('pay', results.map(r => r.pay));
+  detail('after', results.map(r => r.afterTax));
+  detail('gap', results.map(r => r.gap));
+  detail('total', results.map(r => r.total));
+
+  document.getElementById('d-benefit-1').textContent = '基準值';
+  for (let i = 1; i < 3; i++) {
+    const diff = results[i].total - baseTotal;
+    const el = document.getElementById(`d-benefit-${i+1}`);
+    if (diff > 0) {
+      el.innerHTML = `<span class="pos">+${fmt(diff)}</span>`;
+    } else if (diff < 0) {
+      el.innerHTML = `<span class="neg">${fmt(diff)}</span>`;
+    } else {
+      el.textContent = '—';
+    }
+  }
+
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById(`d-gap-${i+1}`);
+    if (results[i].gap < 0) {
+      el.innerHTML = `<span class="neg">${fmt(results[i].gap)}</span>`;
+    } else if (results[i].gap > 0) {
+      el.innerHTML = `<span class="pos">+${fmt(results[i].gap)}</span>`;
+    }
+  }
+}
+
+/* ========================================
+   INITIAL CALC
+   ======================================== */
+calculateIncome();
+updateEstate();
+
+// Focus password input on load
+document.getElementById('password-input').focus();
+</script>
+
+</body>
+</html>
